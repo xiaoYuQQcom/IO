@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>中继卫星</title>
+</head>
+<style>
+  html,body{
+    padding: 0;
+    margin: 0;
+  }
+
+  body{
+    width: 99vw;
+    height: 100vh;
+    padding: 30px 32px 0 ;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  #uri {
+    width: 100%;
+    display: inline-block;
+  }
+  a{
+    text-decoration: none;
+  }
+  #uri:hover {
+    background-color: #ccc;
+  }
+  #fileTable{
+    width: 100vw;
+  }
+#fileList{
+  box-sizing: border-box;
+  width: 100vw;
+  padding: 0 30px;
+}
+  #fileList div{
+    width: 100%;
+    border: 1px solid red;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 8px;
+    overflow:hidden ;
+  }
+</style>
+<body style="display: flex;padding: 30px;">
+
+  <form  id="uploadForm" method="post" enctype="multipart/form-data">
+    <input  style="transform: scale(1.3)" type="file" id="fileInput" name="file" onchange="uploadFile2(this)">
+  </form>
+    <div style="font-size: 60px;">
+      进度 <span id="progress">0</span>%
+    </div>
+  <div id="reload" style="width: 50px;height: 50px;border-radius: 99px;background: red; position: fixed; bottom: 50px; right: 20px;z-index: 9999;display: flex;justify-content: center;align-items: center;"> 刷 </div>
+  <h1>下载文件</h1>
+  <div id="fileTable">
+    <div id="fileList"></div>
+  </div>
+</body>
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const uploadForm = document.getElementById('uploadForm');
+    const progress = document.getElementById('progress');
+    const fileTable = document.getElementById('fileTable');
+    const fileListElement = document.getElementById('fileList');
+    const reload = document.getElementById('reload');
+    function uploadFile(input) {
+      if (input.files && input.files[0]) {
+        let form = document.getElementById("uploadForm");
+        let formData = new FormData(form);
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", "/upload", true);
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            // 文件上传成功的处理代码
+            refreshFileList();
+          } else {
+            // 文件上传失败的处理代码
+          }
+        };
+        // 设置请求头，明确指定编码方式
+        xhr.send(formData);
+      }
+    }
+
+    reload.addEventListener('click',()=>{
+      window.location.reload();
+    })
+
+    function uploadFile2(input) {
+      if (input.files && input.files[0]) {
+        let form = document.getElementById("uploadForm");
+        let formData = new FormData(form);
+        let xhr = new XMLHttpRequest();
+
+        // 监听上传进度事件
+        xhr.upload.onprogress = function (event) {
+          if (event.lengthComputable) {
+            let percentComplete = event.loaded / event.total * 100;
+            progress.innerHTML = percentComplete.toFixed(2);
+            // console.log('上传进度: ' + percentComplete.toFixed(2) + '%');
+            // 你也可以在这里更新页面上的进度条或进度指示器
+          }
+        };
+
+        xhr.open("POST", "/upload", true);
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            // 文件上传成功的处理代码
+            refreshFileList();
+          } else {
+            // 文件上传失败的处理代码
+          }
+        };
+        // 发送表单数据
+        xhr.send(formData);
+      }
+    }
+
+    function refreshFileList() {
+      fetch('/files')
+        .then(response => response.json())
+        .then(data => {
+          fileListElement.innerHTML = '';
+          data.forEach(file => {
+            console.log('file',file);
+
+            const row = document.createElement('div');
+            row.innerHTML = `
+          <a id="uri" href="/uploads/${file}" download="${file}">${file}</a>`;
+            fileListElement.appendChild(row);
+          });
+        });
+    }
+    // 初始化页面时刷新文件列表
+    refreshFileList();
+  </script>
+</html>
